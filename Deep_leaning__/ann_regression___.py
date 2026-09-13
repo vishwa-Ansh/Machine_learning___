@@ -17,6 +17,12 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.metrics import mean_absolute_error,  mean_squared_error,r2_score
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import  LinearRegression
+from sklearn.dummy import DummyRegressor
+# from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+
 
 import torch
 import torch.nn as nn
@@ -240,9 +246,71 @@ print(result)
 
 for i ,j in zip(np.asarray(predicted_df),np.asarray(actual_df)):
     if int(i) == int(j):
-        print("correct")
+        # print("correct")
+        pass
 
+powerplant_data = pd.read_csv("https://raw.githubusercontent.com/vishwa-Ansh/DataLoaders/main/powerplant_data.csv")
+powerplant_data.head()
 
+numeric_features = ["AT", "V", "AP", "RH"]
+# categorical_features = ["PE"]
+
+Preprocessor = ColumnTransformer(
+    transformers= [
+        ("scaled",  StandardScaler(), numeric_features)
+    ],
+    remainder="passthrough"
+)
+
+X = powerplant_data.drop("PE", axis=1)
+y = powerplant_data["PE"]
+
+X_train ,  X_test,  y_train,  y_test = train_test_split(X, y,  test_size=0.2,  random_state=42)
+
+model = Pipeline(
+    steps=[
+        ("preprocessor", Preprocessor),
+        ("model", LinearRegression())
+    ]
+)
+
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
+print("Mean Absolute Error:", mean_absolute_error(y_test, y_pred))
+print("r^2 score : ", r2_score(y_test, y_pred))
+
+model1 = Pipeline(
+    steps=[
+        ("preprocessor", Preprocessor),
+        ("model", DummyRegressor())
+    ]
+)
+model2 = Pipeline(
+    steps=[
+        ("preprocessor", Preprocessor),
+        ("model", RandomForestRegressor())
+    ]
+)
+model1.fit(X_train, y_train)
+y_pred = model1.predict(X_test)
+
+print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
+print("Mean Absolute Error:", mean_absolute_error(y_test, y_pred))
+print("r^2 score : ", r2_score(y_test, y_pred))
+
+model2.fit(X_train, y_train)
+y_pred = model2.predict(X_test)
+
+print("Mean Squared Error:", mean_squared_error(y_test, y_pred))
+print("Mean Absolute Error:", mean_absolute_error(y_test, y_pred))
+print("r^2 score : ", r2_score(y_test, y_pred))
+
+result = np.hstack((y_pred.reshape(-1, 1), y_test.values.reshape(-1, 1)))
+result = pd.DataFrame(result, columns=["Predicted Values", "Actual Values"])
+
+result
 
 import numpy as np
 import pandas as pd
